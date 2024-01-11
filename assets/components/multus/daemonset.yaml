@@ -1,0 +1,105 @@
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: multus
+  namespace: openshift-multus
+  annotations:
+    kubernetes.io/description: |
+      This daemon set launches the Multus networking component on each node.
+spec:
+  selector:
+    matchLabels:
+      app: multus
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 10%
+  template:
+    metadata:
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        app: multus
+        component: network
+        type: infra
+        openshift.io/component: network
+        kubernetes.io/os: "linux"
+    spec:
+      serviceAccountName: multus
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: "system-node-critical"
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: kube-multus
+        #XXX Note: this is just multus downstream image with Dockerfile.openshift. Could be replaced with release image
+        image: quay.io/s1061123/multus-cni:ms
+        imagePullPolicy: Always
+        command: [ "/bin/bash", "-ec", "--" ]
+        args:
+          - >
+            /entrypoint/cnibincopy.sh;
+            exec /usr/src/multus-cni/bin/thin_entrypoint
+            --multus-conf-file=auto
+            --multus-autoconfig-dir=/host/var/run/multus/cni/net.d
+            --multus-kubeconfig-file-host=/var/lib/microshift/resources/multus/kubeconfig
+            --readiness-indicator-file=/var/lib/multus/net.d/10-ovn-kubernetes.conf
+            --skip-multus-binary-copy=true
+        resources:
+          requests:
+            cpu: 10m
+            memory: 65Mi
+        securityContext:
+          privileged: true
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - "/bin/bash"
+              - "-ec"
+              - >
+                rm -f /host/etc/cni/net.d/00-multus.conf;
+                rm -f /host/opt/cni/bin/multus
+        volumeMounts:
+        - mountPath: /entrypoint
+          name: cni-binary-copy
+        - mountPath: /host/etc/os-release
+          name: os-release
+        - name: system-cni-dir
+          mountPath: /host/etc/cni/net.d
+        - name: multus-cni-dir
+          mountPath: /host/var/run/multus/cni/net.d
+        - name: cnibin
+          mountPath: /host/opt/cni/bin
+        env:
+        - name: RHEL8_SOURCE_DIRECTORY
+          value: "/usr/src/multus-cni/rhel8/bin/"
+        - name: RHEL9_SOURCE_DIRECTORY
+          value: "/usr/src/multus-cni/rhel9/bin/"
+        - name: DEFAULT_SOURCE_DIRECTORY
+          value: "/usr/src/multus-cni/bin/"
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: system-cni-dir
+          hostPath:
+            path: "/etc/cni/net.d"
+            type: Directory
+        - name: multus-cni-dir
+          hostPath:
+            path: "/var/lib/multus/net.d"
+            type: Directory
+        - name: cnibin
+          hostPath:
+            path: "/opt/cni/bin"
+            type: Directory
+        - name: os-release
+          hostPath:
+            path: /etc/os-release
+            type: File
+        - name: cni-binary-copy
+          configMap:
+            name: cni-copy-resources
+            defaultMode: 0744

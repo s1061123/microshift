@@ -12,6 +12,7 @@ const (
 	Kubelet                 KubeConfigID = "kubelet"
 	ClusterPolicyController KubeConfigID = "cluster-policy-controller"
 	RouteControllerManager  KubeConfigID = "route-controller-manager"
+        Multus                  KubeConfigID = "multus"
 )
 
 // KubeConfigPath returns the path to the specified kubeconfig file.

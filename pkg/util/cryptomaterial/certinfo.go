@@ -152,6 +152,10 @@ func KubeAPIServerServiceNetworkServingCertDir(certsDir string) string {
 	return filepath.Join(KubeAPIServerServiceNetworkSigner(certsDir), "kube-apiserver-service-network-serving")
 }
 
+func MultusSignerDir(certsDir string) string {
+	return filepath.Join(certsDir, "multus-signer")
+}
+
 // TotalClientCABundlePath returns the path to the cert bundle with all client certificate signers
 func TotalClientCABundlePath(certsDir string) string {
 	return filepath.Join(certsDir, "ca-bundle", "client-ca.crt")

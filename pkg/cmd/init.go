@@ -126,6 +126,13 @@ func certSetup(cfg *config.Config) (*certchains.CertificateChains, error) {
 					ValidityDays: cryptomaterial.ShortLivedCertificateValidityDays,
 				},
 				UserInfo: serviceaccount.UserInfo("openshift-route-controller-manager", "route-controller-manager-sa", ""),
+			},
+			&certchains.ClientCertificateSigningRequestInfo{
+				CSRMeta: certchains.CSRMeta{
+					Name:         "multus",
+					ValidityDays: cryptomaterial.LongLivedCertificateValidityDays,
+				},
+				UserInfo: serviceaccount.UserInfo("openshift-multus", "multus", ""),
 			}),
 
 		// kube-apiserver-to-kubelet-signer
@@ -479,6 +486,19 @@ func initKubeconfigs(
 		cfg.ApiServer.URL,
 		internalTrustPEM,
 		routeControllerManagerCertPEM, routeControllerManagerKeyPEM,
+	); err != nil {
+		return err
+	}
+
+	multusCertPEM, multusKeyPEM, err := certChains.GetCertKey("kube-control-plane-signer", "multus")
+	if err != nil {
+		return err
+	}
+	if err := util.KubeConfigWithClientCerts(
+		cfg.KubeConfigPath(config.Multus),
+		cfg.ApiServer.URL,
+		internalTrustPEM,
+		multusCertPEM, multusKeyPEM,
 	); err != nil {
 		return err
 	}

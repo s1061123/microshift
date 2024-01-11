@@ -15,10 +15,12 @@ func startCNIPlugin(ctx context.Context, cfg *config.Config, kubeconfigPath stri
 	var (
 		ns = []string{
 			"components/ovn/common/namespace.yaml",
+			"components/multus/namespace.yaml",
 		}
 		sa = []string{
 			"components/ovn/common/master-serviceaccount.yaml",
 			"components/ovn/common/node-serviceaccount.yaml",
+			"components/multus/serviceaccount.yaml",
 		}
 		r = []string{
 			"components/ovn/common/role.yaml",
@@ -28,16 +30,20 @@ func startCNIPlugin(ctx context.Context, cfg *config.Config, kubeconfigPath stri
 		}
 		cr = []string{
 			"components/ovn/common/clusterrole.yaml",
+			"components/multus/clusterrole.yaml",
 		}
 		crb = []string{
 			"components/ovn/common/clusterrolebinding.yaml",
+			"components/multus/clusterrolebinding.yaml",
 		}
 		cm = []string{
 			"components/ovn/common/configmap.yaml",
+			"components/multus/configmap.yaml",
 		}
 		apps = []string{
 			"components/ovn/single-node/master/daemonset.yaml",
 			"components/ovn/single-node/node/daemonset.yaml",
+			"components/multus/daemonset.yaml",
 		}
 	)
 
